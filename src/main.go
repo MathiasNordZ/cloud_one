@@ -1,52 +1,65 @@
 package main
 
 import (
+	"assignment_one/src/request"
+	"assignment_one/src/status"
+	"assignment_one/src/structs"
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
+
+	"github.com/joho/godotenv"
 )
 
-type Status struct {
-	RestCountriesApi string `json:"RestCountriesApi"`
-	CurrenciesApi    string `json:"CurrenciesApi"`
-	Version          string `json:"version"`
-	Uptime           string `json:"uptime"`
-}
-
-func getStatus(w http.ResponseWriter, r *http.Request) {
-	const restCountries string = "http://129.241.150.113:8080/"
-	const currencies string = "http://129.241.150.113:9090/currency/"
-
-	countryRes := requestCountry(restCountries)
-	currencyRes := requestCurrency(currencies)
-
-	status := Status{RestCountriesApi: countryRes.Status, CurrenciesApi: currencyRes.Status, Version: "v1", Uptime: "0000"}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(status)
-}
-
-func requestCountry(restCountries string) *http.Response {
-	res, err := http.Get(restCountries)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return res
-}
-
-func requestCurrency(currencyUrl string) *http.Response {
-	res, err := http.Get(currencyUrl)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return res
-}
-
-/*
-* https://medium.com/moesif/building-a-restful-api-with-go-dbd6e7aecf87
- */
 func main() {
-	http.Handle("/v1/status", http.HandlerFunc(getStatus))
+	err := godotenv.Load()
+	if err != nil {
+		// Log error if .env file is not found, but don't exit if it's optional
+		log.Println("Error loading .env file, assuming production environment variables are set")
+	}
+
+	http.Handle("/v1/status", http.HandlerFunc(status.GetStatus))
+	http.Handle("/info/", http.HandlerFunc(GetInfo))
+
 	log.Println("Service is up and running.")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func GetInfo(w http.ResponseWriter, r *http.Request) {
+	country := strings.TrimPrefix(r.URL.Path, "/info/")
+	country = strings.Trim(country, "/")
+
+	if country == "" {
+		http.Error(w, "Seems like no country is specified.", http.StatusBadRequest)
+		return
+	}
+
+	res, err := request.Get("http://129.241.150.113:8080/v3.1/alpha/" + country)
+
+	if err != nil {
+		http.Error(w, "Error contacting country API: "+err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer res.Body.Close()
+
+	decoder := json.NewDecoder(res.Body)
+
+	var countryRes []structs.Country
+	err = decoder.Decode(&countryRes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if len(countryRes) == 0 {
+		http.Error(w, "Country not found", http.StatusNotFound)
+		return
+	}
+
+	single := countryRes[0]
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(single); err != nil {
+		log.Println("Failed to encode:", err)
+	}
 }
