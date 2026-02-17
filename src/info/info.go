@@ -12,7 +12,7 @@ import (
 )
 
 func GetInfo(w http.ResponseWriter, r *http.Request) {
-	country := strings.TrimPrefix(r.URL.Path, "/info/")
+	country := strings.TrimPrefix(r.URL.Path, "/v1/info/")
 	country = strings.Trim(country, "/")
 	countryUrl := os.Getenv("COUNTRY_API")
 

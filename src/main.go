@@ -17,7 +17,7 @@ func main() {
 	}
 
 	http.Handle("/v1/status", http.HandlerFunc(status.GetStatus))
-	http.Handle("/info/", http.HandlerFunc(info.GetInfo))
+	http.Handle("/v1/info/", http.HandlerFunc(info.GetInfo))
 
 	log.Println("Service is up and running.")
 	log.Fatal(http.ListenAndServe(":8080", nil))
