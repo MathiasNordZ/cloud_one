@@ -3,8 +3,10 @@ package info
 import (
 	"assignment_one/src/structs"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -12,51 +14,76 @@ import (
 )
 
 func GetInfo(w http.ResponseWriter, r *http.Request) {
-	country := strings.TrimPrefix(r.URL.Path, "/v1/info/")
-	country = strings.Trim(country, "/")
-	countryUrl := os.Getenv("COUNTRY_API")
-
-	if inputValidation(w, country) {
+	country := CountryCode(r)
+	if InputValidation(w, country) {
 		return
 	}
 
-	res, err := http.NewRequest(http.MethodGet, countryUrl+"v3.1/alpha/"+country, nil)
+	countryURL := os.Getenv("COUNTRY_API")
+	if countryURL == "" {
+		http.Error(w, "COUNTRY_API not set", http.StatusInternalServerError)
+		return
+	}
 
+	full, err := url.JoinPath(countryURL, "v3.1/alpha", country)
+	if err != nil {
+		http.Error(w, "Invalid COUNTRY_API base URL", http.StatusInternalServerError)
+		log.Println("JoinPath error:", err)
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodGet, full, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println("Error when creating request.", err.Error())
+		log.Println("Error when creating request:", err)
 		return
 	}
-	c := http.Client{
-		Timeout: time.Second * 5,
-	}
-	defer c.CloseIdleConnections()
 
-	resp, err := c.Do(res)
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
 	if err != nil {
-		log.Println("Error during request execution.", err)
+		http.Error(w, "Upstream request failed", http.StatusBadGateway)
+		log.Println("Error during request execution:", err)
+		return
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		http.Error(w, "Error with upstream API. "+resp.Status, http.StatusBadGateway)
 		return
 	}
 
-	decoder := json.NewDecoder(resp.Body)
-
-	var countryRes []structs.Country
-	err = decoder.Decode(&countryRes)
+	countryRes, err := CountryDecoder(resp.Body)
 	if err != nil {
-		log.Println("Error during json decoding.", err)
+		http.Error(w, "Failed to decode upstream response", http.StatusBadGateway)
+		log.Println("Decode error:", err)
+		return
 	}
 
 	if len(countryRes) == 0 {
 		http.Error(w, "Country not found", http.StatusNotFound)
 		return
 	}
+	JsonEncoder(w, countryRes[0])
+}
 
-	single := countryRes[0]
+func CountryDecoder(r io.Reader) ([]structs.Country, error) {
+	var out []structs.Country
+	if err := json.NewDecoder(r).Decode(&out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
 
+func InputValidation(w http.ResponseWriter, country string) bool {
+	if !regexp.MustCompile(`^[A-Za-z]{2}$`).MatchString(country) {
+		http.Error(w, "Invalid country code. Use ISO3166 alpha-2 (two letters).", http.StatusBadRequest)
+		return true
+	}
+	return false
+}
+
+func JsonEncoder(w http.ResponseWriter, single structs.Country) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(single); err != nil {
 		log.Println("Failed to encode:", err)
@@ -64,19 +91,11 @@ func GetInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-Method that validates the inputted country code according to ISO3166.
-This is to prevent illegal inputs into the url.
+Method that extracts country code from url.
 */
-func inputValidation(w http.ResponseWriter, country string) bool {
-	if country == "" {
-		http.Error(w, "No country specified.", http.StatusBadRequest)
-		return true
-	} else if len(country) > 3 {
-		http.Error(w, "Invalid country code.", http.StatusBadRequest)
-		return true
-	} else if !regexp.MustCompile("^[a-zA-Z]{2,3}$").MatchString(country) {
-		http.Error(w, "Wrong input format.", http.StatusBadRequest)
-		return true
-	}
-	return false
+func CountryCode(r *http.Request) string {
+	country := strings.TrimPrefix(r.URL.Path, "/v1/info/")
+	country = strings.Trim(country, "/")
+	country = strings.ToUpper(country)
+	return country
 }
