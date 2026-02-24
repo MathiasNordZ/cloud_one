@@ -2,20 +2,20 @@ package info
 
 import (
 	"assignment_one/src/structs"
+	"assignment_one/src/utils"
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
-	"strings"
-	"time"
 )
 
 func GetInfo(w http.ResponseWriter, r *http.Request) {
-	country := CountryCode(r)
-	if InputValidation(w, country) {
+	utils.CheckGET(w, r)
+
+	country := utils.CountryCode(r)
+	if utils.InputValidation(w, country) {
 		return
 	}
 
@@ -26,24 +26,17 @@ func GetInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	full, err := url.JoinPath(countryURL, "v3.1/alpha", country)
-	if err != nil {
-		http.Error(w, "Invalid COUNTRY_API base URL", http.StatusInternalServerError)
-		log.Println("JoinPath error:", err)
+	if utils.HandleErr(w, err, "Failed to join url", http.StatusInternalServerError) {
 		return
 	}
 
 	req, err := http.NewRequest(http.MethodGet, full, nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println("Error when creating request:", err)
+	if utils.HandleErr(w, err, "Failed to create request", http.StatusInternalServerError) {
 		return
 	}
 
-	client := http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		http.Error(w, "Upstream request failed", http.StatusBadGateway)
-		log.Println("Error during request execution:", err)
+	resp, err := utils.HttpClient.Do(req)
+	if utils.HandleErr(w, err, "Failed to do request", http.StatusInternalServerError) {
 		return
 	}
 	defer resp.Body.Close()
@@ -54,9 +47,7 @@ func GetInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	countryRes, err := CountryDecoder(resp.Body)
-	if err != nil {
-		http.Error(w, "Failed to decode upstream response", http.StatusBadGateway)
-		log.Println("Decode error:", err)
+	if utils.HandleErr(w, err, "Failed to decode response body", http.StatusInternalServerError) {
 		return
 	}
 
@@ -75,27 +66,9 @@ func CountryDecoder(r io.Reader) ([]structs.Country, error) {
 	return out, nil
 }
 
-func InputValidation(w http.ResponseWriter, country string) bool {
-	if !regexp.MustCompile(`^[A-Za-z]{2}$`).MatchString(country) {
-		http.Error(w, "Invalid country code. Use ISO3166 alpha-2 (two letters).", http.StatusBadRequest)
-		return true
-	}
-	return false
-}
-
 func JsonEncoder(w http.ResponseWriter, single structs.Country) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(single); err != nil {
 		log.Println("Failed to encode:", err)
 	}
-}
-
-/*
-Method that extracts country code from url.
-*/
-func CountryCode(r *http.Request) string {
-	country := strings.TrimPrefix(r.URL.Path, "/v1/info/")
-	country = strings.Trim(country, "/")
-	country = strings.ToUpper(country)
-	return country
 }
