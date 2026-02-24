@@ -15,6 +15,9 @@ var (
 	startOnce sync.Once
 )
 
+// GetStatus is an http handler for the status endpoint.
+// Usage: /v1/status/
+// Returns status of the API.
 func GetStatus(w http.ResponseWriter, r *http.Request) {
 	utils.CheckGET(w, r)
 
