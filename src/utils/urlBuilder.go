@@ -8,24 +8,20 @@ import (
 	"strings"
 )
 
-func BuildAPIURL(envKey string, parts ...string) (string, bool) {
+// BuildAPIURL builds url with env for api calls.
+func BuildAPIURL(envKey string, parts ...string) (string, error) {
 	base := os.Getenv(envKey)
 	if base == "" {
-		fmt.Println("Environment variable " + envKey + " is not set")
-		return "", false
+		return "", fmt.Errorf("environment variable %s is not set", envKey)
 	}
-
 	full, err := url.JoinPath(base, parts...)
 	if err != nil {
-		fmt.Println(err)
-		return "", false
+		return "", fmt.Errorf("failed to join path: %w", err)
 	}
-	return full, true
+	return full, nil
 }
 
-/*
-Method that extracts country code from url.
-*/
+// CountryCode Method that extracts country code from url.
 func CountryCode(r *http.Request) string {
 	country := strings.TrimPrefix(r.URL.Path, "/v1/info/")
 	country = strings.Trim(country, "/")
