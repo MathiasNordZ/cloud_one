@@ -23,7 +23,7 @@ func BuildAPIURL(envKey string, parts ...string) (string, error) {
 
 // CountryCode Method that extracts country code from url.
 func CountryCode(r *http.Request) string {
-	country := strings.TrimPrefix(r.URL.Path, "/v1/info/")
+	country := strings.TrimPrefix(r.URL.Path, "/countryinfo/v1/info/")
 	country = strings.Trim(country, "/")
 	country = strings.ToUpper(country)
 	return country

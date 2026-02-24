@@ -1,8 +1,8 @@
 package exchange
 
 import (
-	"assignment_one/src/structs"
-	"assignment_one/src/utils"
+	"assignment_one/internal/structs"
+	"assignment_one/internal/utils"
 	"errors"
 	"fmt"
 	"net/http"
@@ -133,7 +133,7 @@ func matchRates(rates structs.CurrencyAPI, countries structs.CountryCurrencyResp
 //
 // For a route like /v1/exchange/no, it returns "NO".
 func countryCodeFromRequest(r *http.Request) string {
-	country := strings.TrimPrefix(r.URL.Path, "/v1/exchange/")
+	country := strings.TrimPrefix(r.URL.Path, "/countryinfo/v1/exchange/")
 	country = strings.Trim(country, "/")
 	country = strings.ToUpper(country)
 	return country

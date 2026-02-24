@@ -1,8 +1,8 @@
 package status
 
 import (
-	"assignment_one/src/structs"
-	"assignment_one/src/utils"
+	"assignment_one/internal/structs"
+	"assignment_one/internal/utils"
 	"io"
 	"net/http"
 	"os"
