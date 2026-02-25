@@ -1,15 +1,14 @@
 package utils
 
 import (
-	"net/http"
+	"errors"
 	"regexp"
 )
 
 // InputValidation ensures that input is 2 letters, a-zA-z.
-func InputValidation(w http.ResponseWriter, country string) bool {
+func InputValidation(country string) error {
 	if !regexp.MustCompile(`^[A-Za-z]{2}$`).MatchString(country) {
-		http.Error(w, "Invalid country code. Use ISO3166 alpha-2 (two letters).", http.StatusBadRequest)
-		return true
+		return errors.New("invalid country code")
 	}
-	return false
+	return nil
 }
