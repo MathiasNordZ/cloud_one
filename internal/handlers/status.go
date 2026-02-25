@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"assignment_one/internal/errorHandling"
-	"assignment_one/internal/json"
+	"assignment_one/internal/jsonHandling"
 	"assignment_one/internal/structs"
 	"assignment_one/internal/utils"
 	"io"
@@ -21,9 +21,7 @@ var (
 	startOnce sync.Once
 )
 
-// GetStatus is an http handler for the status endpoint.
-// Usage: /v1/status/
-// Returns status of the API.
+// getStatus is an http handler for the status endpoint.
 func getStatus(w http.ResponseWriter, r *http.Request) {
 	utils.CheckGET(w, r)
 
@@ -51,7 +49,7 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 		StartTime = time.Now()
 	})
 
-	err = json.EncodeJSON(w, http.StatusOK, structs.Status{
+	err = jsonHandling.EncodeJSON(w, http.StatusOK, structs.Status{
 		RestCountriesApi: countryRes.Status,
 		CurrenciesApi:    currencyRes.Status,
 		Version:          "v1",

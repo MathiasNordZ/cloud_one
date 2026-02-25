@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// main the main entrypoint of the program.
 func main() {
 	err := godotenv.Load()
 	if err != nil {

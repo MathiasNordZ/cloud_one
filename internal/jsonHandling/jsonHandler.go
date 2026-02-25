@@ -1,4 +1,4 @@
-package json
+package jsonHandling
 
 import (
 	"assignment_one/internal/errorHandling"
@@ -47,7 +47,7 @@ func EncodeJSON(w http.ResponseWriter, status int, v any) error {
 	if status == 0 {
 		status = http.StatusOK
 	}
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/jsonHandling")
 	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(v); err != nil {

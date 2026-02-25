@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"assignment_one/internal/errorHandling"
-	"assignment_one/internal/json"
+	"assignment_one/internal/jsonHandling"
 	"assignment_one/internal/structs"
 	"assignment_one/internal/utils"
 	"net/http"
@@ -36,12 +36,12 @@ func getInfo(w http.ResponseWriter, r *http.Request) {
 		errorHandling.WriteHTTPError(w, err)
 	}
 
-	resp, err := json.GetJSON(full, utils.HttpClient)
+	resp, err := jsonHandling.GetJSON(full, utils.HttpClient)
 	if err != nil {
 		errorHandling.WriteHTTPError(w, err)
 	}
 
-	countryRes, err := json.DecodeJSON[[]structs.Country](resp)
+	countryRes, err := jsonHandling.DecodeJSON[[]structs.Country](resp)
 	if err != nil {
 		errorHandling.WriteHTTPError(w, err)
 	}
@@ -50,7 +50,7 @@ func getInfo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Country not found", http.StatusNotFound)
 		return
 	}
-	err = json.EncodeJSON(w, 0, countryRes)
+	err = jsonHandling.EncodeJSON(w, 0, countryRes)
 	if err != nil {
 		errorHandling.WriteHTTPError(w, err)
 	}

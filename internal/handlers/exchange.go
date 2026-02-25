@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"assignment_one/internal/errorHandling"
-	"assignment_one/internal/json"
+	"assignment_one/internal/jsonHandling"
 	"assignment_one/internal/structs"
 	"assignment_one/internal/utils"
 	"net/http"
@@ -30,7 +30,7 @@ func getExchange(w http.ResponseWriter, r *http.Request) {
 		errorHandling.WriteHTTPError(w, err)
 		return
 	}
-	err = json.EncodeJSON(w, http.StatusOK, resp)
+	err = jsonHandling.EncodeJSON(w, http.StatusOK, resp)
 	if err != nil {
 		errorHandling.WriteHTTPError(w, err)
 		return
@@ -90,11 +90,11 @@ func fetchCountry(cc string) ([]structs.CountryAPI, error) {
 	if err != nil {
 		return nil, err
 	}
-	json, err := json.GetJSON(countryUrl, utils.HttpClient)
+	json, err := jsonHandling.GetJSON(countryUrl, utils.HttpClient)
 	if err != nil {
 		return nil, errorHandling.NewHTTPError("country api unavailable", http.StatusBadGateway)
 	}
-	return json.DecodeJSON[[]structs.CountryAPI](json)
+	return jsonHandling.DecodeJSON[[]structs.CountryAPI](json)
 }
 
 // fetchBorders fetches information of the bordering countries of the provided country.
@@ -119,11 +119,11 @@ func fetchBorders(countryAPI []structs.CountryAPI) (structs.CountryCurrencyRespo
 	q.Set("fields", "cca2,currencies")
 	u.RawQuery = q.Encode()
 
-	json, err := json.GetJSON(u.String(), utils.HttpClient)
+	json, err := jsonHandling.GetJSON(u.String(), utils.HttpClient)
 	if err != nil {
 		return nil, errorHandling.NewHTTPError("Failed to get JSON from API", http.StatusBadGateway)
 	}
-	return json.DecodeJSON[structs.CountryCurrencyResponse](json)
+	return jsonHandling.DecodeJSON[structs.CountryCurrencyResponse](json)
 }
 
 // fetchCountry fetches information about a country's currency and decodes it into a CurrencyAPI struct.
@@ -138,11 +138,11 @@ func fetchCurrency(countryAPI []structs.CountryAPI) (structs.CurrencyAPI, error)
 		return structs.CurrencyAPI{}, err
 	}
 
-	json, err := json.GetJSON(currencyUrl, utils.HttpClient)
+	json, err := jsonHandling.GetJSON(currencyUrl, utils.HttpClient)
 	if err != nil {
 		return structs.CurrencyAPI{}, errorHandling.NewHTTPError("currency api unavailable", http.StatusBadGateway)
 	}
-	return json.DecodeJSON[structs.CurrencyAPI](json)
+	return jsonHandling.DecodeJSON[structs.CurrencyAPI](json)
 }
 
 // matchRates matches the rates in the CurrencyAPI struct against the wanted currencies. It then returns a map of the currency and rate.
