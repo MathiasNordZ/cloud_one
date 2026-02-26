@@ -66,6 +66,8 @@ func buildExchange(cc string) (structs.Exchange, error) {
 		return structs.Exchange{}, err
 	}
 
+	code := getFirstCurrencyCode(countryAPI)
+
 	currencyAPI, err := fetchCurrency(countryAPI)
 	if err != nil {
 		return structs.Exchange{}, err
@@ -77,7 +79,7 @@ func buildExchange(cc string) (structs.Exchange, error) {
 	}
 	return structs.Exchange{
 		Country:       countryAPI[0].Name.Common,
-		Currency:      currencyAPI.BaseCode,
+		Currency:      code,
 		ExchangeRates: rates,
 	}, nil
 }
