@@ -12,7 +12,7 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Error loading .env file, assuming production environment variables are set")
+		log.Println("Error loading enviromental variables.")
 	}
 
 	handlers.InitStatus()

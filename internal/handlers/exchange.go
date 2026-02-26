@@ -43,7 +43,6 @@ func validate(r *http.Request) (string, error) {
 	if r.Method != http.MethodGet {
 		return "", errorHandling.NewHTTPError("Method not allowed.", http.StatusMethodNotAllowed)
 	}
-
 	cc := extractCC(r)
 	if cc == "" {
 		return "", errorHandling.NewHTTPError("Missing country code.", http.StatusBadRequest)
@@ -76,7 +75,6 @@ func buildExchange(cc string) (structs.Exchange, error) {
 	if len(rates) == 0 {
 		return structs.Exchange{}, errorHandling.NewHTTPError("No matching border currencies.", http.StatusInternalServerError)
 	}
-
 	return structs.Exchange{
 		Country:       countryAPI[0].Name.Common,
 		Currency:      currencyAPI.BaseCode,
